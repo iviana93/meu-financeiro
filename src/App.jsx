@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { db } from "./firebaseConfig";
-import { collection, onSnapshot, query, orderBy, addDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc } from "firebase/firestore";
 import { Trash2, Plus, Wallet, PieChart, List, Calendar as CalendarIcon, X } from "lucide-react";
 
 export default function App() {
   const [input, setInput] = useState("");
   const [gastos, setGastos] = useState([]);
-  const [mesFiltro, setMesFiltro] = useState(new Date().toISOString().substring(0, 7));
-  const [categoriaAberta, setCategoriaAberta] = useState(null); // Estado para o modal
+  const [mesFiltro, setMesFiltro] = useState(new Date().toISOString().substring(0, 7)); // Formato "YYYY-MM"
+  const [categoriaAberta, setCategoriaAberta] = useState(null);
 
   const categoriasConf = {
     Alimentação: { cor: "#ff7675" },
@@ -27,21 +27,33 @@ export default function App() {
   const adicionarGasto = async () => {
     const match = input.match(/(\d+([.,]\d+)?)\s+(.+)/);
     if (!match) return alert("Formato: 45 pizza");
+
     const valor = parseFloat(match[1].replace(',', '.'));
     const desc = match[3];
     const busca = desc.toLowerCase();
 
     let categoria = "Outros";
-    if (/(ifood|pizza|lanche|comida|restaurante|cafe|janta|almoço)/.test(busca)) categoria = "Alimentação";
-    else if (/(uber|99|gasolina|transporte|bus|metro|estacionamento)/.test(busca)) categoria = "Transporte";
-    else if (/(mercado|feira|compra|extra|carrefour|asai|atacadão)/.test(busca)) categoria = "Mercado";
+    if (/(ifood|pizza|lanche|comida|restaurante|cafe|janta|almoço|burguer|doce)/.test(busca)) categoria = "Alimentação";
+    else if (/(uber|99|gasolina|transporte|bus|metro|estacionamento|pedágio)/.test(busca)) categoria = "Transporte";
+    else if (/(mercado|feira|compra|extra|carrefour|asai|atacadão|pão|leite)/.test(busca)) categoria = "Mercado";
 
-    await addDoc(collection(db, "gastos"), { valor, descricao: desc, categoria, data: new Date().toISOString() });
-    setInput("");
+    try {
+      await addDoc(collection(db, "gastos"), { 
+        valor, 
+        descricao: desc, 
+        categoria, 
+        data: new Date().toISOString() 
+      });
+      setInput("");
+    } catch (e) {
+      alert("Erro ao salvar no banco!");
+    }
   };
 
   const deletarGasto = async (id) => {
-    if (window.confirm("Remover registro?")) await deleteDoc(doc(db, "gastos", id));
+    if (window.confirm("Remover este registro permanentemente?")) {
+      await deleteDoc(doc(db, "gastos", id));
+    }
   };
 
   const gastosFiltrados = gastos.filter(g => g.data.startsWith(mesFiltro));
@@ -52,47 +64,54 @@ export default function App() {
     return acc;
   }, {});
 
-  // Função para agrupar gastos da categoria por dia para o Modal
-  const obterGastosDiarios = (cat) => {
-    const gastosDaCat = gastosFiltrados.filter(g => g.categoria === cat);
-    const dias = {};
-    gastosDaCat.forEach(g => {
-      const dia = new Date(g.data).toLocaleDateString('pt-BR');
-      dias[dia] = (dias[dia] || 0) + g.valor;
-    });
-    return Object.entries(dias).sort((a, b) => b[0].localeCompare(a[0]));
-  };
-
   return (
     <div style={{ backgroundColor: "#0f172a", minHeight: "100vh", color: "#f8fafc", padding: "40px", fontFamily: "'Inter', sans-serif" }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         
-        {/* Header e Input (Mantidos exatamente iguais) */}
+        {/* HEADER & FILTRO */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "40px" }}>
           <div>
             <h1 style={{ fontSize: "2rem", fontWeight: "800", letterSpacing: "-1px", margin: 0 }}>Dashboard Financeiro</h1>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px", color: "#94a3b8" }}>
               <CalendarIcon size={16} />
-              <input type="month" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} style={{ backgroundColor: "#1e293b", border: "1px solid #334155", color: "white", padding: "5px 10px", borderRadius: "8px" }} />
+              <input 
+                type="month" 
+                value={mesFiltro} 
+                onChange={(e) => setMesFiltro(e.target.value)}
+                style={{ backgroundColor: "#1e293b", border: "1px solid #334155", color: "white", padding: "5px 10px", borderRadius: "8px", cursor: "pointer" }}
+              />
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
             <span style={{ color: "#94a3b8", fontSize: "0.8rem", textTransform: "uppercase" }}>Gasto no Período</span>
-            <div style={{ fontSize: "2.8rem", fontWeight: "900", color: "#22c55e" }}>R$ {totalMes.toFixed(2)}</div>
+            <div style={{ fontSize: "3rem", fontWeight: "900", color: "#22c55e" }}>R$ {totalMes.toFixed(2)}</div>
           </div>
         </div>
 
+        {/* INPUT DE LANÇAMENTO */}
         <div style={{ display: "flex", gap: "15px", backgroundColor: "#1e293b", padding: "15px", borderRadius: "20px", marginBottom: "40px", border: "1px solid #334155" }}>
           <div style={{ display: "flex", alignItems: "center", flex: 1, gap: "10px", padding: "0 10px" }}>
             <Wallet size={20} color="#94a3b8" />
-            <input value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && adicionarGasto()} placeholder="Ex: 50 mercado..." style={{ backgroundColor: "transparent", border: "none", color: "white", outline: "none", fontSize: "1rem", width: "100%" }} />
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && adicionarGasto()}
+              placeholder="Digite valor e descrição (ex: 50 mercado)..."
+              style={{ backgroundColor: "transparent", border: "none", color: "white", outline: "none", fontSize: "1rem", width: "100%" }}
+            />
           </div>
-          <button onClick={adicionarGasto} style={{ backgroundColor: "#22c55e", border: "none", borderRadius: "12px", padding: "10px 25px", color: "white", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}><Plus size={18} /> Lançar</button>
+          <button onClick={adicionarGasto} style={{ backgroundColor: "#22c55e", border: "none", borderRadius: "12px", padding: "10px 25px", color: "white", fontWeight: "bold", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+            <Plus size={18} /> Lançar
+          </button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "40px" }}>
+          
+          {/* COLUNA ESQUERDA: HISTÓRICO */}
           <section>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", color: "#94a3b8" }}><List size={18} /> <h3>Lançamentos de {mesFiltro}</h3></div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", color: "#94a3b8" }}>
+              <List size={18} /> <h3>Lançamentos</h3>
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {gastosFiltrados.map(g => (
                 <div key={g.id} style={{ backgroundColor: "#1e293b", padding: "16px", borderRadius: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #334155" }}>
@@ -104,7 +123,7 @@ export default function App() {
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                    <span style={{ fontWeight: "700" }}>R$ {g.valor.toFixed(2)}</span>
+                    <span style={{ fontWeight: "700", fontSize: "1.1rem" }}>R$ {g.valor.toFixed(2)}</span>
                     <button onClick={() => deletarGasto(g.id)} style={{ background: "none", border: "none", color: "#475569", cursor: "pointer" }}><Trash2 size={18} /></button>
                   </div>
                 </div>
@@ -112,15 +131,25 @@ export default function App() {
             </div>
           </section>
 
-          {/* Planilha com Clique Habilitado */}
+          {/* COLUNA DIREITA: PLANILHA POR CATEGORIA */}
           <section>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", color: "#94a3b8" }}><PieChart size={18} /> <h3>Resumo por Categoria</h3></div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", color: "#94a3b8" }}>
+              <PieChart size={18} /> <h3>Resumo por Categoria</h3>
+            </div>
             <div style={{ backgroundColor: "#1e293b", borderRadius: "20px", padding: "24px", border: "1px solid #334155" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead><tr style={{ textAlign: "left", color: "#64748b", fontSize: "0.75rem", letterSpacing: "1px" }}><th style={{ paddingBottom: "20px" }}>Categoria (clique para ver dias)</th><th style={{ paddingBottom: "20px", textAlign: "right" }}>Total</th></tr></thead>
+                <thead>
+                  <tr style={{ textAlign: "left", color: "#64748b", fontSize: "0.75rem", letterSpacing: "1px" }}>
+                    <th style={{ paddingBottom: "20px" }}>CATEGORIA (CLIQUE)</th>
+                    <th style={{ paddingBottom: "20px", textAlign: "right" }}>TOTAL</th>
+                  </tr>
+                </thead>
                 <tbody>
                   {Object.keys(categoriasConf).map(cat => (
-                    <tr key={cat} onClick={() => setCategoriaAberta(cat)} style={{ borderTop: "1px solid #334155", cursor: "pointer", transition: "0.2s" }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#1e293b"}>
+                    <tr key={cat} 
+                        onClick={() => setCategoriaAberta(cat)}
+                        style={{ borderTop: "1px solid #334155", cursor: "pointer", transition: "0.2s" }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#26334d"}>
                       <td style={{ padding: "18px 0", display: "flex", alignItems: "center", gap: "12px" }}>
                         <div style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: categoriasConf[cat].cor }} />
                         {cat}
@@ -137,30 +166,67 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODAL DETALHADO POR DIA */}
+      {/* MODAL: CALENDÁRIO MENSAL DE DETALHES */}
       {categoriaAberta && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(15, 23, 42, 0.8)", backdropFilter: "blur(8px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
-          <div style={{ backgroundColor: "#1e293b", width: "90%", maxWidth: "450px", borderRadius: "24px", padding: "30px", border: "1px solid #334155", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ width: "12px", height: "12px", borderRadius: "50%", backgroundColor: categoriasConf[categoriaAberta].cor }} />
-                <h3 style={{ margin: 0, fontSize: "1.4rem" }}>{categoriaAberta}</h3>
-              </div>
-              <button onClick={() => setCategoriaAberta(null)} style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer" }}><X size={24} /></button>
-            </div>
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(15, 23, 42, 0.9)", backdropFilter: "blur(12px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: "20px" }}>
+          <div style={{ backgroundColor: "#1e293b", width: "100%", maxWidth: "700px", borderRadius: "24px", padding: "30px", border: "1px solid #334155", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)" }}>
             
-            <div style={{ maxHeight: "400px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
-              {obterGastosDiarios(categoriaAberta).length > 0 ? obterGastosDiarios(categoriaAberta).map(([dia, valor]) => (
-                <div key={dia} style={{ display: "flex", justifyContent: "space-between", padding: "15px", backgroundColor: "#0f172a", borderRadius: "12px", border: "1px solid #334155" }}>
-                  <span style={{ color: "#94a3b8", fontWeight: "500" }}>{dia}</span>
-                  <span style={{ fontWeight: "700", color: "#f8fafc" }}>R$ {valor.toFixed(2)}</span>
-                </div>
-              )) : <p style={{ color: "#64748b", textAlign: "center" }}>Nenhum gasto registrado.</p>}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "15px", height: "15px", borderRadius: "50%", backgroundColor: categoriasConf[categoriaAberta].cor }} />
+                <h2 style={{ margin: 0, fontSize: "1.5rem", fontWeight: "800" }}>Gastos: {categoriaAberta}</h2>
+              </div>
+              <button onClick={() => setCategoriaAberta(null)} style={{ background: "#334155", border: "none", color: "white", borderRadius: "50%", width: "40px", height: "40px", cursor: "pointer" }}><X size={20} style={{ margin: "auto" }} /></button>
             </div>
 
-            <div style={{ marginTop: "25px", paddingTop: "20px", borderTop: "1px solid #334155", textAlign: "center" }}>
-              <span style={{ color: "#94a3b8", fontSize: "0.9rem" }}>Total em {categoriaAberta}: </span>
-              <span style={{ fontWeight: "800", color: "#22c55e", fontSize: "1.2rem" }}>R$ {(resumoCategorias[categoriaAberta] || 0).toFixed(2)}</span>
+            {/* GRADE DO CALENDÁRIO */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", textAlign: "center", fontWeight: "bold", color: "#64748b", fontSize: "0.7rem", marginBottom: "10px" }}>
+              {['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'].map(d => <div key={d}>{d}</div>)}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "6px" }}>
+              {(() => {
+                const [ano, mes] = mesFiltro.split('-').map(Number);
+                const primeiroDiaSemana = new Date(ano, mes - 1, 1).getDay();
+                const diasNoMes = new Date(ano, mes, 0).getDate();
+                const hoje = new Date().toLocaleDateString('pt-BR');
+                
+                const gastosPorDia = gastosFiltrados
+                  .filter(g => g.categoria === categoriaAberta)
+                  .reduce((acc, g) => {
+                    const d = new Date(g.data).getDate();
+                    acc[d] = (acc[d] || 0) + g.valor;
+                    return acc;
+                  }, {});
+
+                const blocos = [];
+                for (let i = 0; i < primeiroDiaSemana; i++) blocos.push(<div key={`v-${i}`} />);
+                for (let d = 1; d <= diasNoMes; d++) {
+                  const dataFormatada = new Date(ano, mes - 1, d).toLocaleDateString('pt-BR');
+                  const valor = gastosPorDia[d];
+                  const eHoje = dataFormatada === hoje;
+
+                  blocos.push(
+                    <div key={d} style={{ 
+                      backgroundColor: eHoje ? "#26334d" : "#0f172a", 
+                      height: "75px", borderRadius: "10px", padding: "6px", 
+                      border: eHoje ? `1px solid ${categoriasConf[categoriaAberta].cor}` : "1px solid #334155",
+                      display: "flex", flexDirection: "column", justifyContent: "space-between"
+                    }}>
+                      <span style={{ fontSize: "0.75rem", color: eHoje ? "white" : "#475569", fontWeight: "bold" }}>{d}</span>
+                      {valor > 0 && (
+                        <span style={{ fontSize: "0.8rem", color: "#22c55e", fontWeight: "800", textAlign: "right" }}>R${valor.toFixed(0)}</span>
+                      )}
+                    </div>
+                  );
+                }
+                return blocos;
+              })()}
+            </div>
+
+            <div style={{ marginTop: "30px", textAlign: "right" }}>
+              <span style={{ color: "#94a3b8" }}>Total no mês: </span>
+              <span style={{ color: "#22c55e", fontWeight: "900", fontSize: "1.3rem" }}>R$ {(resumoCategorias[categoriaAberta] || 0).toFixed(2)}</span>
             </div>
           </div>
         </div>
