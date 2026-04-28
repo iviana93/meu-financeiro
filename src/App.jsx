@@ -79,7 +79,7 @@ export default function App() {
       <div className="content">
         <header className="header">
           <div>
-            <h1 style={{ fontSize: "1.8rem", fontWeight: "800", margin: 0 }}>Dashboard Financeiro</h1>
+            <h1 style={{ fontSize: "1.8rem", fontWeight: "800", margin: 0 }}>Controle de Gastos</h1>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px", color: "#94a3b8" }}>
               <CalendarIcon size={16} />
               <input type="month" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} 
