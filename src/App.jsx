@@ -5,7 +5,7 @@ import { Trash2, Plus, Wallet, PieChart, List, Calendar as CalendarIcon, X } fro
 
 export default function App() {
   const [input, setInput] = useState("");
-  const [usuario, setUsuario] = useState("Igor"); // Nomes personalizados
+  const [usuario, setUsuario] = useState("Igor");
   const [gastos, setGastos] = useState([]);
   const [mesFiltro, setMesFiltro] = useState(new Date().toISOString().substring(0, 7));
   const [categoriaAberta, setCategoriaAberta] = useState(null);
@@ -37,13 +37,7 @@ export default function App() {
     else if (/(uber|99|gasolina|transporte|bus|metro|estacionamento|pedágio)/.test(busca)) categoria = "Transporte";
     else if (/(mercado|feira|compra|extra|carrefour|asai|atacadão|pão|leite)/.test(busca)) categoria = "Mercado";
 
-    await addDoc(collection(db, "gastos"), { 
-      valor, 
-      descricao: desc, 
-      categoria, 
-      quem: usuario, 
-      data: new Date().toISOString() 
-    });
+    await addDoc(collection(db, "gastos"), { valor, descricao: desc, categoria, quem: usuario, data: new Date().toISOString() });
     setInput("");
   };
 
@@ -55,7 +49,6 @@ export default function App() {
   const totalMes = gastosFiltrados.reduce((acc, g) => acc + g.valor, 0);
   const totalIgor = gastosFiltrados.filter(g => g.quem === "Igor").reduce((acc, g) => acc + g.valor, 0);
   const totalTamires = gastosFiltrados.filter(g => g.quem === "Tamires").reduce((acc, g) => acc + g.valor, 0);
-
   const resumoCategorias = gastosFiltrados.reduce((acc, g) => {
     acc[g.categoria] = (acc[g.categoria] || 0) + g.valor;
     return acc;
@@ -66,91 +59,84 @@ export default function App() {
       <style>{`
         .container { background-color: #0f172a; min-height: 100vh; color: #f8fafc; padding: 20px; font-family: 'Inter', sans-serif; }
         .content { max-width: 1200px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; flex-wrap: wrap; gap: 20px; }
-        .total-valor { font-size: 3rem; font-weight: 900; color: #22c55e; line-height: 1; }
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+        .total-valor { font-size: 2.8rem; font-weight: 900; color: #22c55e; line-height: 1; }
         .grid-layout { display: grid; grid-template-columns: 1.6fr 1fr; gap: 30px; }
-        .user-toggle { display: flex; background: #1e293b; border-radius: 10px; padding: 4px; border: 1px solid #334155; }
-        .user-btn { border: none; padding: 8px 15px; border-radius: 7px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.3s; }
-        .badge-user { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; background: #334155; color: #94a3b8; text-transform: uppercase; margin-top: 4px; display: inline-block; font-weight: 800; }
         
+        /* Ajuste do Input para Celular */
+        .input-box { background: #1e293b; padding: 15px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 30px; }
+        .user-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .user-btn { flex: 1; border: none; padding: 10px; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 0.8rem; transition: 0.3s; background: #0f172a; color: #475569; }
+        .input-field-row { display: flex; gap: 10px; align-items: center; background: #0f172a; padding: 5px 15px; border-radius: 12px; border: 1px solid #334155; }
+        
+        .cal-tag { font-size: 10px; padding: 1px 4px; border-radius: 3px; font-weight: 900; text-transform: uppercase; margin-bottom: 2px; }
+
         @media (max-width: 768px) {
           .header { flex-direction: column; align-items: center; text-align: center; }
-          .total-valor { font-size: 2.5rem; }
           .grid-layout { grid-template-columns: 1fr; }
-          .input-area { flex-direction: column; gap: 10px; }
         }
       `}</style>
 
       <div className="content">
         <header className="header">
           <div>
-            <h1 style={{ fontSize: "1.8rem", fontWeight: "800", margin: 0 }}>Dashboard Financeiro</h1>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px", color: "#94a3b8" }}>
-              <CalendarIcon size={16} />
-              <input type="month" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} 
-                style={{ backgroundColor: "#1e293b", border: "1px solid #334155", color: "white", padding: "8px", borderRadius: "8px" }} />
-            </div>
+            <h1 style={{ fontSize: "1.6rem", fontWeight: "800", margin: 0 }}>Dashboard Financeiro</h1>
+            <input type="month" value={mesFiltro} onChange={(e) => setMesFiltro(e.target.value)} 
+                style={{ backgroundColor: "#1e293b", border: "1px solid #334155", color: "white", padding: "8px", borderRadius: "8px", marginTop: "10px" }} />
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: "0.8rem", color: "#94a3b8", marginBottom: "5px", fontWeight: "600" }}>
-              IGOR: R${totalIgor.toFixed(2)} | TAMIRES: R${totalTamires.toFixed(2)}
-            </div>
+            <div style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: "700" }}>IGOR: R${totalIgor.toFixed(2)} | TAMIRES: R${totalTamires.toFixed(2)}</div>
             <div className="total-valor">R$ {totalMes.toFixed(2)}</div>
           </div>
         </header>
 
-        {/* ÁREA DE INPUT */}
-        <div className="input-area" style={{ display: "flex", gap: "10px", backgroundColor: "#1e293b", padding: "12px", borderRadius: "15px", marginBottom: "30px", border: "1px solid #334155", alignItems: "center" }}>
-          <div className="user-toggle">
-            <button className="user-btn" onClick={() => setUsuario("Igor")} style={{ background: usuario === "Igor" ? "#22c55e" : "transparent", color: usuario === "Igor" ? "white" : "#64748b" }}>Igor</button>
-            <button className="user-btn" onClick={() => setUsuario("Tamires")} style={{ background: usuario === "Tamires" ? "#a29bfe" : "transparent", color: usuario === "Tamires" ? "white" : "#64748b" }}>Tamires</button>
+        {/* NOVO DESIGN DE INPUT MAIS ESPAÇOSO */}
+        <div className="input-box">
+          <div className="user-row">
+            <button className="user-btn" onClick={() => setUsuario("Igor")} style={{ background: usuario === "Igor" ? "#22c55e" : "#0f172a", color: usuario === "Igor" ? "white" : "#475569" }}>IGOR</button>
+            <button className="user-btn" onClick={() => setUsuario("Tamires")} style={{ background: usuario === "Tamires" ? "#a29bfe" : "#0f172a", color: usuario === "Tamires" ? "white" : "#475569" }}>TAMIRES</button>
           </div>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && adicionarGasto()}
-            placeholder="Ex: 50 mercado"
-            style={{ backgroundColor: "transparent", border: "none", color: "white", outline: "none", fontSize: "16px", flex: 1 }}
-          />
-          <button onClick={adicionarGasto} style={{ backgroundColor: "#22c55e", border: "none", borderRadius: "10px", padding: "12px 20px", color: "white", fontWeight: "bold", cursor: "pointer" }}>
-            <Plus size={20} />
-          </button>
+          <div className="input-field-row">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && adicionarGasto()}
+              placeholder="Digite: 50 mercado..."
+              style={{ backgroundColor: "transparent", border: "none", color: "white", outline: "none", fontSize: "16px", flex: 1, padding: "10px 0" }}
+            />
+            <button onClick={adicionarGasto} style={{ backgroundColor: "#22c55e", border: "none", borderRadius: "8px", width: "40px", height: "40px", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Plus size={24} />
+            </button>
+          </div>
         </div>
 
         <div className="grid-layout">
-          {/* LANÇAMENTOS */}
           <section>
-            <h3 style={{ color: "#94a3b8", display: "flex", alignItems: "center", gap: "8px" }}><List size={18}/> Lançamentos</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "15px" }}>
-              {gastosFiltrados.map(g => (
-                <div key={g.id} style={{ backgroundColor: "#1e293b", padding: "14px", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid #334155" }}>
-                  <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                    <div style={{ width: "3px", height: "35px", backgroundColor: categoriasConf[g.categoria]?.cor, borderRadius: "2px" }} />
-                    <div>
-                      <div style={{ fontWeight: "600", fontSize: "0.95rem" }}>{g.descricao}</div>
-                      <div className="badge-user" style={{ color: g.quem === "Tamires" ? "#a29bfe" : "#22c55e", border: `1px solid ${g.quem === "Tamires" ? "#a29bfe33" : "#22c55e33"}` }}>{g.quem}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                    <span style={{ fontWeight: "700" }}>R$ {g.valor.toFixed(2)}</span>
-                    <button onClick={() => deletarGasto(g.id)} style={{ background: "none", border: "none", color: "#475569" }}><Trash2 size={16} /></button>
+            <h3 style={{ color: "#94a3b8", fontSize: "0.9rem", marginBottom: "15px" }}><List size={16}/> LANÇAMENTOS</h3>
+            {gastosFiltrados.map(g => (
+              <div key={g.id} style={{ backgroundColor: "#1e293b", padding: "14px", borderRadius: "15px", marginBottom: "10px", display: "flex", justifyContent: "space-between", border: "1px solid #334155" }}>
+                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                  <div style={{ width: "3px", height: "30px", backgroundColor: categoriasConf[g.categoria]?.cor }} />
+                  <div>
+                    <div style={{ fontWeight: "700", fontSize: "0.9rem" }}>{g.descricao}</div>
+                    <span style={{ fontSize: "0.6rem", color: g.quem === "Igor" ? "#22c55e" : "#a29bfe", fontWeight: "900" }}>{g.quem.toUpperCase()}</span>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span style={{ fontWeight: "800" }}>R$ {g.valor.toFixed(2)}</span>
+                  <Trash2 size={16} onClick={() => deletarGasto(g.id)} style={{ color: "#475569", cursor: "pointer" }} />
+                </div>
+              </div>
+            ))}
           </section>
 
-          {/* CATEGORIAS */}
           <section>
-            <h3 style={{ color: "#94a3b8", display: "flex", alignItems: "center", gap: "8px" }}><PieChart size={18}/> Categorias</h3>
-            <div style={{ backgroundColor: "#1e293b", borderRadius: "15px", padding: "20px", border: "1px solid #334155", marginTop: "15px" }}>
+            <h3 style={{ color: "#94a3b8", fontSize: "0.9rem", marginBottom: "15px" }}><PieChart size={16}/> POR CATEGORIA</h3>
+            <div style={{ backgroundColor: "#1e293b", borderRadius: "20px", padding: "20px", border: "1px solid #334155" }}>
               {Object.keys(categoriasConf).map(cat => (
                 <div key={cat} onClick={() => setCategoriaAberta(cat)} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #334155", cursor: "pointer" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: categoriasConf[cat].cor }} />
-                    <span style={{ fontSize: "0.9rem" }}>{cat}</span>
-                  </div>
-                  <span style={{ fontWeight: "700" }}>R$ {(resumoCategorias[cat] || 0).toFixed(2)}</span>
+                  <span style={{ fontSize: "0.85rem", fontWeight: "600" }}>{cat}</span>
+                  <span style={{ fontWeight: "800" }}>R$ {(resumoCategorias[cat] || 0).toFixed(2)}</span>
                 </div>
               ))}
             </div>
@@ -158,47 +144,48 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODAL CALENDÁRIO COMPLETO */}
+      {/* MODAL COM TAGS DE NOME NO CALENDÁRIO */}
       {categoriaAberta && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(15, 23, 42, 0.95)", backdropFilter: "blur(8px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: "15px" }}>
-          <div style={{ backgroundColor: "#1e293b", width: "100%", maxWidth: "600px", borderRadius: "24px", padding: "25px", border: "1px solid #334155" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Gastos de {categoriaAberta}</h2>
-              <X onClick={() => setCategoriaAberta(null)} style={{ cursor: "pointer", color: "#64748b" }} />
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(15, 23, 42, 0.98)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
+          <div style={{ backgroundColor: "#1e293b", width: "95%", maxWidth: "500px", borderRadius: "25px", padding: "20px", border: "1px solid #334155" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
+              <h2 style={{ fontSize: "1.1rem", margin: 0 }}>{categoriaAberta}</h2>
+              <X onClick={() => setCategoriaAberta(null)} />
             </div>
             
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px", textAlign: "center", fontSize: "0.7rem", color: "#475569", marginBottom: "8px", fontWeight: "bold" }}>
-              {['D','S','T','Q','Q','S','S'].map(d => <div key={d}>{d}</div>)}
-            </div>
-
             <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "5px" }}>
               {(() => {
                 const [ano, mes] = mesFiltro.split('-').map(Number);
                 const primeiroDia = new Date(ano, mes - 1, 1).getDay();
                 const totalDias = new Date(ano, mes, 0).getDate();
-                const gastosDia = gastosFiltrados.filter(g => g.categoria === categoriaAberta).reduce((acc, g) => {
+                
+                // Mapeia quem gastou em qual dia
+                const mapaDias = gastosFiltrados.filter(g => g.categoria === categoriaAberta).reduce((acc, g) => {
                   const d = new Date(g.data).getDate();
-                  acc[d] = (acc[d] || 0) + g.valor;
+                  if (!acc[d]) acc[d] = { total: 0, users: new Set() };
+                  acc[d].total += g.valor;
+                  acc[d].users.add(g.quem);
                   return acc;
                 }, {});
 
                 let blocos = [];
                 for(let i=0; i<primeiroDia; i++) blocos.push(<div key={`v-${i}`}/>);
                 for(let d=1; d<=totalDias; d++) {
-                  const v = gastosDia[d];
+                  const info = mapaDias[d];
                   blocos.push(
-                    <div key={d} style={{ backgroundColor: "#0f172a", height: "65px", borderRadius: "8px", border: "1px solid #334155", padding: "5px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                      <span style={{ fontSize: "0.7rem", color: "#475569", fontWeight: "bold" }}>{d}</span>
-                      {v > 0 && <span style={{ color: "#22c55e", fontSize: "0.65rem", fontWeight: "900", textAlign: "right" }}>R${v.toFixed(0)}</span>}
+                    <div key={d} style={{ backgroundColor: "#0f172a", height: "75px", borderRadius: "10px", border: "1px solid #334155", padding: "4px", display: "flex", flexDirection: "column" }}>
+                      <span style={{ fontSize: "0.65rem", color: "#475569" }}>{d}</span>
+                      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-end" }}>
+                        {info && Array.from(info.users).map(u => (
+                          <div key={u} className="cal-tag" style={{ backgroundColor: u === "Igor" ? "#22c55e33" : "#a29bfe33", color: u === "Igor" ? "#22c55e" : "#a29bfe" }}>{u[0]}</div>
+                        ))}
+                        {info && <span style={{ fontSize: "0.75rem", fontWeight: "900", color: "white" }}>{info.total.toFixed(0)}</span>}
+                      </div>
                     </div>
                   );
                 }
                 return blocos;
               })()}
-            </div>
-            <div style={{ marginTop: "20px", textAlign: "right", borderTop: "1px solid #334155", paddingTop: "15px" }}>
-              <span style={{ fontSize: "0.9rem", color: "#94a3b8" }}>Total na categoria: </span>
-              <span style={{ fontWeight: "900", color: "#22c55e", fontSize: "1.2rem" }}>R$ {(resumoCategorias[categoriaAberta] || 0).toFixed(2)}</span>
             </div>
           </div>
         </div>
