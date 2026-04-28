@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { db } from "./firebaseConfig";
 import { collection, addDoc, onSnapshot, query, orderBy, doc, deleteDoc } from "firebase/firestore";
-import { Trash2, Plus, Wallet, PieChart, List, Calendar as CalendarIcon, X, User } from "lucide-react";
+import { Trash2, Plus, Wallet, PieChart, List, Calendar as CalendarIcon, X } from "lucide-react";
 
 export default function App() {
   const [input, setInput] = useState("");
-  const [usuario, setUsuario] = useState("Eu"); // Estado para identificar quem gasta
+  const [usuario, setUsuario] = useState("Igor"); // Nomes personalizados
   const [gastos, setGastos] = useState([]);
   const [mesFiltro, setMesFiltro] = useState(new Date().toISOString().substring(0, 7));
   const [categoriaAberta, setCategoriaAberta] = useState(null);
@@ -41,7 +41,7 @@ export default function App() {
       valor, 
       descricao: desc, 
       categoria, 
-      quem: usuario, // Salvando quem gastou
+      quem: usuario, 
       data: new Date().toISOString() 
     });
     setInput("");
@@ -53,8 +53,8 @@ export default function App() {
 
   const gastosFiltrados = gastos.filter(g => g.data.startsWith(mesFiltro));
   const totalMes = gastosFiltrados.reduce((acc, g) => acc + g.valor, 0);
-  const totalEu = gastosFiltrados.filter(g => g.quem === "Eu").reduce((acc, g) => acc + g.valor, 0);
-  const totalEsposa = gastosFiltrados.filter(g => g.quem === "Esposa").reduce((acc, g) => acc + g.valor, 0);
+  const totalIgor = gastosFiltrados.filter(g => g.quem === "Igor").reduce((acc, g) => acc + g.valor, 0);
+  const totalTamires = gastosFiltrados.filter(g => g.quem === "Tamires").reduce((acc, g) => acc + g.valor, 0);
 
   const resumoCategorias = gastosFiltrados.reduce((acc, g) => {
     acc[g.categoria] = (acc[g.categoria] || 0) + g.valor;
@@ -71,7 +71,7 @@ export default function App() {
         .grid-layout { display: grid; grid-template-columns: 1.6fr 1fr; gap: 30px; }
         .user-toggle { display: flex; background: #1e293b; border-radius: 10px; padding: 4px; border: 1px solid #334155; }
         .user-btn { border: none; padding: 8px 15px; border-radius: 7px; cursor: pointer; font-weight: bold; font-size: 0.8rem; transition: 0.3s; }
-        .badge-user { font-size: 0.6rem; padding: 2px 6px; borderRadius: 4px; background: #334155; color: #94a3b8; text-transform: uppercase; margin-top: 4px; display: inline-block; }
+        .badge-user { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; background: #334155; color: #94a3b8; text-transform: uppercase; margin-top: 4px; display: inline-block; font-weight: 800; }
         
         @media (max-width: 768px) {
           .header { flex-direction: column; align-items: center; text-align: center; }
@@ -92,16 +92,18 @@ export default function App() {
             </div>
           </div>
           <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: "0.8rem", color: "#94a3b8", marginBottom: "5px" }}>EU: R${totalEu.toFixed(2)} | ELA: R${totalEsposa.toFixed(2)}</div>
+            <div style={{ fontSize: "0.8rem", color: "#94a3b8", marginBottom: "5px", fontWeight: "600" }}>
+              IGOR: R${totalIgor.toFixed(2)} | TAMIRES: R${totalTamires.toFixed(2)}
+            </div>
             <div className="total-valor">R$ {totalMes.toFixed(2)}</div>
           </div>
         </header>
 
-        {/* INPUT AREA COM SELETOR DE USUÁRIO */}
+        {/* ÁREA DE INPUT */}
         <div className="input-area" style={{ display: "flex", gap: "10px", backgroundColor: "#1e293b", padding: "12px", borderRadius: "15px", marginBottom: "30px", border: "1px solid #334155", alignItems: "center" }}>
           <div className="user-toggle">
-            <button className="user-btn" onClick={() => setUsuario("Eu")} style={{ background: usuario === "Eu" ? "#22c55e" : "transparent", color: usuario === "Eu" ? "white" : "#64748b" }}>Eu</button>
-            <button className="user-btn" onClick={() => setUsuario("Esposa")} style={{ background: usuario === "Esposa" ? "#74b9ff" : "transparent", color: usuario === "Esposa" ? "white" : "#64748b" }}>Esposa</button>
+            <button className="user-btn" onClick={() => setUsuario("Igor")} style={{ background: usuario === "Igor" ? "#22c55e" : "transparent", color: usuario === "Igor" ? "white" : "#64748b" }}>Igor</button>
+            <button className="user-btn" onClick={() => setUsuario("Tamires")} style={{ background: usuario === "Tamires" ? "#a29bfe" : "transparent", color: usuario === "Tamires" ? "white" : "#64748b" }}>Tamires</button>
           </div>
           <input
             value={input}
@@ -116,6 +118,7 @@ export default function App() {
         </div>
 
         <div className="grid-layout">
+          {/* LANÇAMENTOS */}
           <section>
             <h3 style={{ color: "#94a3b8", display: "flex", alignItems: "center", gap: "8px" }}><List size={18}/> Lançamentos</h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "15px" }}>
@@ -125,7 +128,7 @@ export default function App() {
                     <div style={{ width: "3px", height: "35px", backgroundColor: categoriasConf[g.categoria]?.cor, borderRadius: "2px" }} />
                     <div>
                       <div style={{ fontWeight: "600", fontSize: "0.95rem" }}>{g.descricao}</div>
-                      <div className="badge-user" style={{ color: g.quem === "Esposa" ? "#74b9ff" : "#22c55e" }}>{g.quem}</div>
+                      <div className="badge-user" style={{ color: g.quem === "Tamires" ? "#a29bfe" : "#22c55e", border: `1px solid ${g.quem === "Tamires" ? "#a29bfe33" : "#22c55e33"}` }}>{g.quem}</div>
                     </div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
@@ -137,6 +140,7 @@ export default function App() {
             </div>
           </section>
 
+          {/* CATEGORIAS */}
           <section>
             <h3 style={{ color: "#94a3b8", display: "flex", alignItems: "center", gap: "8px" }}><PieChart size={18}/> Categorias</h3>
             <div style={{ backgroundColor: "#1e293b", borderRadius: "15px", padding: "20px", border: "1px solid #334155", marginTop: "15px" }}>
@@ -154,16 +158,47 @@ export default function App() {
         </div>
       </div>
 
-      {/* O MODAL DO CALENDÁRIO SEGUE O MESMO PADRÃO ANTERIOR */}
+      {/* MODAL CALENDÁRIO COMPLETO */}
       {categoriaAberta && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(15, 23, 42, 0.95)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
-          <div style={{ backgroundColor: "#1e293b", width: "95%", maxWidth: "600px", borderRadius: "20px", padding: "20px", border: "1px solid #334155" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
-              <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Detalhes: {categoriaAberta}</h2>
-              <X onClick={() => setCategoriaAberta(null)} style={{ cursor: "pointer" }} />
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(15, 23, 42, 0.95)", backdropFilter: "blur(8px)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: "15px" }}>
+          <div style={{ backgroundColor: "#1e293b", width: "100%", maxWidth: "600px", borderRadius: "24px", padding: "25px", border: "1px solid #334155" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Gastos de {categoriaAberta}</h2>
+              <X onClick={() => setCategoriaAberta(null)} style={{ cursor: "pointer", color: "#64748b" }} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px" }}>
-              {/* Lógica do calendário mantida (omitida aqui por brevidade, mas deve ser a mesma do código anterior) */}
+            
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "4px", textAlign: "center", fontSize: "0.7rem", color: "#475569", marginBottom: "8px", fontWeight: "bold" }}>
+              {['D','S','T','Q','Q','S','S'].map(d => <div key={d}>{d}</div>)}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "5px" }}>
+              {(() => {
+                const [ano, mes] = mesFiltro.split('-').map(Number);
+                const primeiroDia = new Date(ano, mes - 1, 1).getDay();
+                const totalDias = new Date(ano, mes, 0).getDate();
+                const gastosDia = gastosFiltrados.filter(g => g.categoria === categoriaAberta).reduce((acc, g) => {
+                  const d = new Date(g.data).getDate();
+                  acc[d] = (acc[d] || 0) + g.valor;
+                  return acc;
+                }, {});
+
+                let blocos = [];
+                for(let i=0; i<primeiroDia; i++) blocos.push(<div key={`v-${i}`}/>);
+                for(let d=1; d<=totalDias; d++) {
+                  const v = gastosDia[d];
+                  blocos.push(
+                    <div key={d} style={{ backgroundColor: "#0f172a", height: "65px", borderRadius: "8px", border: "1px solid #334155", padding: "5px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "0.7rem", color: "#475569", fontWeight: "bold" }}>{d}</span>
+                      {v > 0 && <span style={{ color: "#22c55e", fontSize: "0.65rem", fontWeight: "900", textAlign: "right" }}>R${v.toFixed(0)}</span>}
+                    </div>
+                  );
+                }
+                return blocos;
+              })()}
+            </div>
+            <div style={{ marginTop: "20px", textAlign: "right", borderTop: "1px solid #334155", paddingTop: "15px" }}>
+              <span style={{ fontSize: "0.9rem", color: "#94a3b8" }}>Total na categoria: </span>
+              <span style={{ fontWeight: "900", color: "#22c55e", fontSize: "1.2rem" }}>R$ {(resumoCategorias[categoriaAberta] || 0).toFixed(2)}</span>
             </div>
           </div>
         </div>
